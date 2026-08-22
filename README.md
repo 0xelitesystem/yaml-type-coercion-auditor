@@ -137,6 +137,21 @@ There is no build. It is a single self-contained `index.html` with inline CSS an
 - [yaml-to-json](https://github.com/0xelitesystem/yaml-to-json) converts YAML to JSON with a sixth set of scalar rules of its own. This tool is the warning label for it.
 - [jwt-inspector](https://github.com/0xelitesystem/jwt-inspector) decodes and checks a JWT locally.
 
+## Third-party notices
+
+The resolution rules in this page are reimplemented from published type
+specifications and from behaviour measured directly against each parser. No
+third-party code is bundled and no network request is made.
+
+- js-yaml. Copyright (C) 2011-2015 by Vitaly Puzrin. MIT.
+  https://github.com/nodeca/js-yaml
+  The integer, float, boolean and null resolvers are reimplemented from
+  `lib/js-yaml/type/*.js` (version 3) and `lib/type/*.js` (version 4).
+- The YAML 1.1 type repository and the YAML 1.2 core schema, both from
+  yaml.org, are used as specifications.
+- PyYAML and eemeli/yaml behaviour was measured empirically. No code from
+  either is reproduced here.
+
 ## License
 
 MIT. Copyright (c) 2026 0xelitesystem.
