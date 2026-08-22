@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YAML Type Coercion Auditor</title>
+<meta name="description" content="Paste YAML and see every scalar that resolves to a different type or value under PyYAML, js-yaml 3, js-yaml 4, YAML 1.1 and YAML 1.2. Runs entirely in your browser.">
+<link rel="canonical" href="https://0xelitesystem.github.io/yaml-type-coercion-auditor/">
+<meta property="og:title" content="YAML Type Coercion Auditor">
+<meta property="og:description" content="Paste YAML and see every scalar that resolves to a different type or value under PyYAML, js-yaml 3, js-yaml 4, YAML 1.1 and YAML 1.2.">
+<meta property="og:url" content="https://0xelitesystem.github.io/yaml-type-coercion-auditor/">
+<meta name="twitter:card" content="summary">
+<meta property="og:type" content="website">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"YAML Type Coercion Auditor","applicationCategory":"DeveloperApplication","operatingSystem":"Any (browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://0xelitesystem.github.io/yaml-type-coercion-auditor/","author":{"@type":"Person","name":"0xelitesystem","url":"https://elitesystem.ai"}}
+</script>
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('ytca-theme');
+    if (t !== 'dark' && t !== 'light') {
+      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+</script>
+<style>
+:root, :root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --bg-deep: #050505;
+  --surface: #111110;
+  --surface-2: #161614;
+  --ink: #e8e8e3;
+  --ink-soft: #a8a8a3;
+  --muted: #6e6e68;
+  --rule: #1f1f1d;
+  --rule-2: #2a2a27;
+  --accent: #d4ff3a;
+  --accent-2: #ffb454;
+  --accent-soft: rgba(212,255,58,0.12);
+  --on-accent: #0a0a0a;
+  --code-bg: #111110;
+  --ok: #7ddc7d;
+  --warn: #ffb454;
+  --err: #ff6450;
+  --info: #6fd3e0;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e8ebef;
+  --bg-deep: #f4f5f8;
+  --surface: #dee2e8;
+  --surface-2: #d3d7df;
+  --ink: #0a0a0a;
+  --ink-soft: #2a2a27;
+  --muted: #6e6e68;
+  --rule: #c8cdd5;
+  --rule-2: #aab0ba;
+  --accent: #2d6b00;
+  --accent-2: #8a4d00;
+  --accent-soft: rgba(45,107,0,0.08);
+  --on-accent: #ffffff;
+  --code-bg: #dee2e8;
+  --ok: #1a5c2e;
+  --warn: #8a4d00;
+  --err: #a82d14;
+  --info: #0f5c60;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow-wrap: break-word;
+}
+code, pre, textarea, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 28px 18px 64px; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 32px 0; }
+
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+.tagline { color: var(--ink-soft); margin: 0; max-width: 62ch; }
+.themebtn {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--rule-2);
+  border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 13px; white-space: nowrap;
+}
+.themebtn:hover { border-color: var(--accent); color: var(--accent); }
+
+h2 { font-size: 17px; margin: 34px 0 10px; letter-spacing: 0.01em; }
+h3 { font-size: 14px; margin: 20px 0 8px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; }
+p { margin: 0 0 12px; }
+.small { font-size: 13px; color: var(--ink-soft); }
+.muted { color: var(--ink-soft); }
+
+.lead {
+  border: 1px solid var(--rule-2); border-left: 3px solid var(--err);
+  background: var(--surface); border-radius: 6px; padding: 16px 18px; margin: 24px 0 8px;
+}
+.lead h2 { margin: 0 0 8px; font-size: 16px; color: var(--ink); }
+.lead p:last-child { margin-bottom: 0; }
+.lead code { color: var(--accent); }
+
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+textarea {
+  width: 100%; min-height: 260px; resize: vertical;
+  background: var(--code-bg); color: var(--ink);
+  border: 1px solid var(--rule-2); border-radius: 6px; padding: 12px;
+  font-size: 13px; line-height: 1.55; tab-size: 2;
+}
+textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+button {
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule-2);
+  border-radius: 6px; padding: 8px 13px; cursor: pointer; font-size: 13px;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+button.primary:hover { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent); }
+.samples { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.samples span { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.banner { border-radius: 6px; padding: 11px 14px; margin: 14px 0 0; font-size: 13px; border: 1px solid; }
+.banner.err { border-color: var(--err); color: var(--err); background: transparent; }
+.banner.warn { border-color: var(--warn); color: var(--warn); background: transparent; }
+.banner ul { margin: 6px 0 0; padding-left: 18px; }
+
+.stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 0; }
+.stat { flex: 1 1 150px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; }
+.stat .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.stat .l { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
+.stat.v .n { color: var(--err); }
+.stat.t .n { color: var(--warn); }
+.stat.a .n { color: var(--ok); }
+
+.headline { border: 1px solid var(--rule-2); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 6px; padding: 14px 16px; margin-top: 14px; }
+.headline .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); display: block; margin-bottom: 6px; }
+
+.finding { border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); margin-top: 12px; overflow: hidden; }
+.finding > .head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; padding: 11px 14px; border-bottom: 1px solid var(--rule); background: var(--surface-2); }
+.finding .loc { font-size: 12px; color: var(--ink-soft); }
+.finding .lit { font-size: 14px; font-weight: 600; color: var(--ink); word-break: break-all; }
+.badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; border: 1px solid; letter-spacing: 0.04em; white-space: nowrap; }
+.badge.v { color: var(--err); border-color: var(--err); }
+.badge.t { color: var(--warn); border-color: var(--warn); }
+.badge.c { color: var(--info); border-color: var(--info); }
+.badge.r { color: var(--ink-soft); border-color: var(--rule-2); }
+.cols { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.col { padding: 10px 12px; border-right: 1px solid var(--rule); min-width: 0; }
+.col:last-child { border-right: 0; }
+.col .p { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; }
+.col .ty { font-size: 11px; color: var(--ink-soft); margin-top: 5px; }
+.col .va { font-size: 14px; margin-top: 2px; word-break: break-all; }
+.col.odd { background: var(--accent-soft); }
+.col.odd .va { color: var(--err); font-weight: 600; }
+.finding .note { padding: 9px 14px; border-top: 1px solid var(--rule); font-size: 12.5px; color: var(--ink-soft); background: var(--bg-deep); }
+.srcline { padding: 8px 14px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--ink-soft); white-space: pre; overflow-x: auto; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 7px 11px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { background: var(--surface-2); color: var(--ink-soft); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; position: sticky; top: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+td.sc { font-weight: 600; }
+td.diff { color: var(--err); }
+td.same { color: var(--ink-soft); }
+tr.agree td.sc { color: var(--ink-soft); font-weight: 400; }
+
+details { border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); padding: 0; margin-top: 12px; }
+summary { cursor: pointer; padding: 12px 14px; font-weight: 600; font-size: 14px; }
+summary:hover { color: var(--accent); }
+details > div { padding: 0 14px 14px; }
+details > div > .tablewrap { border-radius: 6px; }
+
+ul.tight { margin: 0 0 12px; padding-left: 20px; }
+ul.tight li { margin-bottom: 7px; }
+.kv { font-size: 12.5px; color: var(--ink-soft); }
+.selfcheck { font-size: 12.5px; margin: 10px 0 0; padding: 9px 12px; border: 1px solid var(--rule-2); border-radius: 6px; background: var(--bg-deep); }
+.selfcheck b { color: var(--ok); }
+.selfcheck.bad b { color: var(--err); }
+
+footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-soft); display: flex; gap: 8px 18px; flex-wrap: wrap; }
+
+@media (max-width: 720px) {
+  .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .col { border-bottom: 1px solid var(--rule); }
+  .col:nth-child(2n) { border-right: 0; }
+  h1 { font-size: 22px; }
+  .wrap { padding: 20px 13px 48px; }
+}
+@media (max-width: 430px) {
+  .col { padding: 9px 9px; }
+  .col .va { font-size: 13px; }
+  .stat { flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div>
+    <h1>YAML Type Coercion Auditor</h1>
+    <p class="tagline">Paste YAML. See every scalar that resolves to a different type, or a different value, depending on which parser reads the file.</p>
+  </div>
+  <button class="themebtn" id="themebtn" type="button">Theme</button>
+</div>
+
+<div class="lead">
+  <h2>The upgrade that rewrote your file modes</h2>
+  <p>The famous YAML gotcha is <code>NO</code> becoming <code>false</code>. The expensive one is quieter. <b>js-yaml changed integer resolution between major version 3 and major version 4, and neither version tells you.</b></p>
+  <p>Bumping that one dependency silently changed <code>mode: 0644</code> from <b>420</b> to <b>644</b>, changed <code>012</code> from <b>10</b> to <b>12</b>, and flipped <code>0o644</code> from the string <code>"0o644"</code> to the number <b>420</b>. Every other scalar in the file resolved identically, so nothing else in the diff hinted at it. Neither version raised an error.</p>
+  <p>The inverse direction hurts just as much: a file written for the newer rules, read by the older ones, turns <code>0o644</code> back into a plain string, and a chmod call gets a string where it expected an int.</p>
+</div>
+
+<p class="small">Also worth knowing before you read the table below: <b>"we moved to YAML 1.2" is not a safe summary.</b> Measured, no widely used parser sits cleanly on either side of the 1.1 / 1.2 line. js-yaml 4 still resolves binary literals and still returns <code>Date</code> objects for bare dates, neither of which is YAML 1.2 core. PyYAML resolves <code>on</code> and <code>yes</code> as booleans but leaves <code>y</code> and <code>n</code> as strings, so it is not YAML 1.1 either. That is why this tool shows five named columns and not two.</p>
+
+<h2>Audit a document</h2>
+<div class="panel">
+  <textarea id="input" spellcheck="false" placeholder="Paste YAML here, or load a sample below."></textarea>
+  <div class="row">
+    <button class="primary" id="run" type="button">Audit YAML</button>
+    <button id="clear" type="button">Clear</button>
+    <span class="small muted" id="hint">Nothing is uploaded. All five resolvers run in this tab.</span>
+  </div>
+  <div class="samples">
+    <span>Samples</span>
+    <button data-sample="compose" type="button">Service config</button>
+    <button data-sample="actions" type="button">CI workflow</button>
+    <button data-sample="edges" type="button">Edge cases</button>
+  </div>
+</div>
+
+<div id="messages"></div>
+<div id="summary"></div>
+<div id="findings"></div>
+
+<h2>Reference: 35 scalars, measured</h2>
+<p class="small">Every cell below was produced by running the real parsers on 2026-08-21: PyYAML 6.0.3, js-yaml 3.15.1, js-yaml 4.3.1, and eemeli/yaml 2.9.0 at <code>version: '1.1'</code> and <code>version: '1.2'</code>. Rows where all five agree are dimmed; in the rest, only the cells that disagree with the majority are marked. The table scrolls sideways. <span id="refcount"></span></p>
+<div class="tablewrap"><table id="reftable"><thead></thead><tbody></tbody></table></div>
+<div class="selfcheck" id="selfcheck"></div>
+
+<h2>Five findings worth the read</h2>
+<ul class="tight">
+  <li><b><code>1e3</code> is the one row where Python stands alone.</b> It is the string <code>"1e3"</code> under PyYAML and the number <code>1000</code> under all four JavaScript resolvers. PyYAML's float pattern requires a decimal point, and requires any exponent to carry an explicit sign, so <code>1e3</code>, <code>1e+3</code>, <code>1.e3</code> and <code>1.0e3</code> all stay strings while <code>1.0e+3</code> resolves to 1000.0. A <code>timeout: 1e3</code> is a number in Node and text in Python.</li>
+  <li><b>Sexagesimals are their own class, not octal.</b> <code>8:00</code> is <code>480</code> and <code>22:30</code> is <code>1350</code> and <code>1:2:3</code> is <code>3723</code> under PyYAML, js-yaml 3 and YAML 1.1. All three are plain strings under js-yaml 4 and YAML 1.2. This is base-60 integer resolution, a completely separate rule from the leading-zero octal rule, and it fires on values that look like clock times.</li>
+  <li><b><code>00:00</code> and <code>60:00</code> disagree in opposite directions.</b> <code>00:00</code> resolves to the number <code>0</code> under YAML 1.1 only, because eemeli/yaml's base-60 pattern allows a leading zero while PyYAML's and js-yaml 3's require a leading 1 through 9. Meanwhile <code>60:00</code>, which is not a valid clock time at all, coerces to <code>3600</code> under three of the five.</li>
+  <li><b>Single-letter booleans are not where the documentation says they are.</b> The YAML 1.1 bool type lists <code>y</code> and <code>n</code>. eemeli/yaml at 1.1 honours that. PyYAML does not: its bool pattern covers <code>yes</code>, <code>no</code>, <code>on</code>, <code>off</code> and their case variants but not the single letters, so <code>y</code> stays a string there. Both js-yaml majors resolve only <code>true</code> and <code>false</code>.</li>
+  <li><b>Type identity can differ where the value looks identical.</b> <code>1.0</code> is a Python <code>float</code> under PyYAML and a JavaScript <code>number</code> holding the integer 1 everywhere else, because JavaScript has no separate integer type. Nothing changes numerically, but a round trip through js-yaml will re-emit it as <code>1</code>.</li>
+</ul>
+
+<h2>How this tool works</h2>
+<p class="small">There is no YAML library on this page. Two layers do the work.</p>
+<ul class="tight small">
+  <li><b>A scalar scanner.</b> It walks the document line by line and pulls out plain scalars from block mappings, block sequences and flow collections, tracking keys as well as values, because a key like <code>on:</code> is resolved by the same rules. It skips comments, single- and double-quoted scalars, block scalar bodies under <code>|</code> and <code>&gt;</code>, aliases, and any value carrying an explicit tag. A quoted <code>"0644"</code> is unambiguous and is never flagged. It is a scanner, not a full parser: it does not build a document tree and it will not catch every exotic construction.</li>
+  <li><b>Five resolvers.</b> Each column is a port of the corresponding parser's own resolution code. The PyYAML column uses the regular expressions from <code>yaml/resolver.py</code> and the constructors from <code>yaml/constructor.py</code>. The js-yaml columns use the character-scanning integer resolvers and float patterns from <code>lib/type/int.js</code> and <code>float.js</code> in each major version, plus the shared timestamp type. The YAML 1.1 and 1.2 columns use eemeli/yaml's tag lists in schema order. The self-check above runs those ports against the measured table and reports the score.</li>
+</ul>
+
+<h2>Reading the result</h2>
+<ul class="tight small">
+  <li><b>value drift</b> means at least two parsers both returned a number and the numbers are different. Nothing downstream will throw. This is the dangerous one.</li>
+  <li><b>type drift</b> means the resolved type differs across parsers: a string in one, a number or boolean or date in another.</li>
+  <li>Two parsers "agree" when the kind and the value match. Rendering differences alone are not counted, so PyYAML printing <code>1.0</code> where JavaScript prints <code>1</code> is not a finding.</li>
+</ul>
+
+<footer>
+  <a href="https://elitesystem.ai">elitesystem.ai</a>
+  <a href="https://github.com/0xelitesystem/yaml-type-coercion-auditor">source</a>
+  <a href="https://0xelitesystem.github.io/">catalog</a>
+</footer>
+
+</div>
+<script>
+/* ============================================================
+   YAML Type Coercion Auditor
+   Everything below runs locally. No network, no dependencies.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* ---------- shared numeric helpers ---------- */
+
+  function sexa(v) {
+    var parts = v.split(':'), acc = 0, i;
+    for (i = 0; i < parts.length; i++) acc = acc * 60 + parseFloat(parts[i]);
+    return acc;
+  }
+  function pad(n, w) { var s = String(Math.abs(n)); while (s.length < w) s = '0' + s; return (n < 0 ? '-' : '') + s; }
+  function jsNum(n) {
+    if (typeof n === 'number' && isNaN(n)) return 'NaN';
+    if (n === Infinity) return 'Infinity';
+    if (n === -Infinity) return '-Infinity';
+    if (Object.is(n, -0)) return '0';
+    return String(n);
+  }
+  function pyNum(n, isFloat) {
+    if (typeof n === 'number' && isNaN(n)) return 'nan';
+    if (n === Infinity) return 'inf';
+    if (n === -Infinity) return '-inf';
+    if (Object.is(n, -0)) return isFloat ? '0.0' : '0';
+    if (isFloat && n === Math.floor(n) && isFinite(n) && Math.abs(n) < 1e16) return n.toFixed(1);
+    return String(n);
+  }
+  function R(kind, type, value) { return { kind: kind, type: type, value: value }; }
+
+  /* ---------- PyYAML 6.0.3, SafeLoader ----------
+     Patterns transcribed from yaml/resolver.py (re.X whitespace removed).
+     Value construction follows yaml/constructor.py. */
+
+  var PY_BOOL = /^(?:yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF)$/;
+  var PY_BOOL_T = /^(?:yes|Yes|YES|true|True|TRUE|on|On|ON)$/;
+  var PY_FLOAT = /^(?:[-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+][0-9]+)?|\.[0-9][0-9_]*(?:[eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/;
+  var PY_INT = /^(?:[-+]?0b[0-1_]+|[-+]?0[0-7_]+|[-+]?(?:0|[1-9][0-9_]*)|[-+]?0x[0-9a-fA-F_]+|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$/;
+  var PY_NULL = /^(?:~|null|Null|NULL|)$/;
+  var PY_DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+  var PY_TS = /^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:[Tt]|[ \t]+)([0-9]{1,2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]*))?(?:[ \t]*(Z|[-+][0-9]{1,2}(?::[0-9]{2})?))?$/;
+
+  function pyIntValue(s) {
+    var v = s.replace(/_/g, ''), sign = 1;
+    if (v.charAt(0) === '-') { sign = -1; v = v.slice(1); }
+    else if (v.charAt(0) === '+') { v = v.slice(1); }
+    if (v === '0') return 0;
+    if (v.slice(0, 2) === '0b') return sign * parseInt(v.slice(2), 2);
+    if (v.slice(0, 2) === '0x') return sign * parseInt(v.slice(2), 16);
+    if (v.charAt(0) === '0') return sign * parseInt(v, 8);
+    if (v.indexOf(':') >= 0) return sign * sexa(v);
+    return sign * parseInt(v, 10);
+  }
+  function pyFloatValue(s) {
+    var v = s.replace(/_/g, '').toLowerCase(), sign = 1;
+    if (v.charAt(0) === '-') { sign = -1; v = v.slice(1); }
+    else if (v.charAt(0) === '+') { v = v.slice(1); }
+    if (v === '.inf') return sign * Infinity;
+    if (v === '.nan') return NaN;
+    if (v.indexOf(':') >= 0) return sign * sexa(v);
+    return sign * parseFloat(v);
+  }
+  function pyTimestamp(s) {
+    if (PY_DATE.test(s)) return R('date', 'datetime.date', s);
+    var m = PY_TS.exec(s);
+    if (!m) return null;
+    var out = pad(+m[1], 4) + '-' + pad(+m[2], 2) + '-' + pad(+m[3], 2) +
+      'T' + pad(+m[4], 2) + ':' + m[5] + ':' + m[6];
+    if (m[7]) out += '.' + (m[7] + '000000').slice(0, 6);
+    if (m[8]) {
+      if (m[8] === 'Z') out += '+00:00';
+      else {
+        var tz = /^([-+])([0-9]{1,2})(?::([0-9]{2}))?$/.exec(m[8]);
+        out += tz[1] + pad(+tz[2], 2) + ':' + (tz[3] || '00');
+      }
+    }
+    return R('date', 'datetime.datetime', out);
+  }
+  function resolvePyYAML(s) {
+    if (PY_BOOL.test(s)) return R('boolean', 'bool', PY_BOOL_T.test(s) ? 'True' : 'False');
+    if (PY_FLOAT.test(s)) return R('number', 'float', pyNum(pyFloatValue(s), true));
+    if (PY_INT.test(s)) return R('number', 'int', pyNum(pyIntValue(s), false));
+    if (PY_NULL.test(s)) return R('null', 'NoneType', 'None');
+    var ts = pyTimestamp(s);
+    if (ts) return ts;
+    if (s === '<<') return R('string', 'merge key', '<<');
+    return R('string', 'str', s);
+  }
+
+  /* ---------- js-yaml timestamp type, shared by both majors ---------- */
+
+  var JSY_DATE = /^([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9])$/;
+  var JSY_TS = /^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:[Tt]|[ \t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\.([0-9]*))?(?:[ \t]*(Z|([-+])([0-9][0-9]?)(?::([0-9][0-9]))?))?$/;
+
+  function jsyTimestamp(s) {
+    var match = JSY_DATE.exec(s);
+    if (match === null) match = JSY_TS.exec(s);
+    if (match === null) return null;
+    var year = +match[1], month = +match[2] - 1, day = +match[3];
+    var hour = +(match[4] || 0), minute = +(match[5] || 0), second = +(match[6] || 0);
+    var fraction = 0, delta = null, f;
+    if (match[7]) {
+      f = match[7].slice(0, 3);
+      while (f.length < 3) f += '0';
+      fraction = +f;
+    }
+    if (match[9]) {
+      delta = (+match[10] * 60 + +(match[11] || 0)) * 60000;
+      if (match[9] === '-') delta = -delta;
+    }
+    var t = Date.UTC(year, month, day, hour, minute, second, fraction);
+    if (delta) t -= delta;
+    return R('date', 'Date', new Date(t).toISOString());
+  }
+
+  function isOct(c) { return c >= 0x30 && c <= 0x37; }
+  function isDec(c) { return c >= 0x30 && c <= 0x39; }
+  function isHex(c) { return (c >= 0x30 && c <= 0x39) || (c >= 0x41 && c <= 0x46) || (c >= 0x61 && c <= 0x66); }
+  var JSY_BOOL = /^(?:true|True|TRUE|false|False|FALSE)$/;
+  function jsyNullTest(s) { return s === '' || s === '~' || s === 'null' || s === 'Null' || s === 'NULL'; }
+
+  /* ---------- js-yaml 3.15.1 ----------
+     Ported from lib/js-yaml/type/int.js, float.js, bool.js, null.js. */
+
+  function jsy3IntTest(data) {
+    var max = data.length, index = 0, hasDigits = false, ch;
+    if (!max) return false;
+    ch = data[index];
+    if (ch === '-' || ch === '+') ch = data[++index];
+    if (ch === '0') {
+      if (index + 1 === max) return true;
+      ch = data[++index];
+      if (ch === 'b') {
+        index++;
+        for (; index < max; index++) {
+          ch = data[index];
+          if (ch === '_') continue;
+          if (ch !== '0' && ch !== '1') return false;
+          hasDigits = true;
+        }
+        return hasDigits && ch !== '_';
+      }
+      if (ch === 'x') {
+        index++;
+        for (; index < max; index++) {
+          ch = data[index];
+          if (ch === '_') continue;
+          if (!isHex(data.charCodeAt(index))) return false;
+          hasDigits = true;
+        }
+        return hasDigits && ch !== '_';
+      }
+      for (; index < max; index++) {
+        ch = data[index];
+        if (ch === '_') continue;
+        if (!isOct(data.charCodeAt(index))) return false;
+        hasDigits = true;
+      }
+      return hasDigits && ch !== '_';
+    }
+    if (ch === '_') return false;
+    for (; index < max; index++) {
+      ch = data[index];
+      if (ch === '_') continue;
+      if (ch === ':') break;
+      if (!isDec(data.charCodeAt(index))) return false;
+      hasDigits = true;
+    }
+    if (!hasDigits || ch === '_') return false;
+    if (ch !== ':') return true;
+    return /^(:[0-5]?[0-9])+$/.test(data.slice(index));
+  }
+  function jsy3IntValue(data) {
+    var value = data.replace(/_/g, ''), sign = 1, ch, digits = [], base, acc;
+    ch = value[0];
+    if (ch === '-' || ch === '+') { if (ch === '-') sign = -1; value = value.slice(1); ch = value[0]; }
+    if (value === '0') return 0;
+    if (ch === '0') {
+      if (value[1] === 'b') return sign * parseInt(value.slice(2), 2);
+      if (value[1] === 'x') return sign * parseInt(value, 16);
+      return sign * parseInt(value, 8);
+    }
+    if (value.indexOf(':') >= 0) {
+      value.split(':').forEach(function (v) { digits.unshift(parseInt(v, 10)); });
+      acc = 0; base = 1;
+      digits.forEach(function (d) { acc += d * base; base *= 60; });
+      return sign * acc;
+    }
+    return sign * parseInt(value, 10);
+  }
+  var JSY3_FLOAT = /^(?:[-+]?(?:0|[1-9][0-9_]*)(?:\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?|\.[0-9_]+(?:[eE][-+]?[0-9]+)?|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/;
+  function jsy3FloatValue(data) {
+    var value = data.replace(/_/g, '').toLowerCase(), sign, digits = [], acc, base;
+    sign = value[0] === '-' ? -1 : 1;
+    if ('+-'.indexOf(value[0]) >= 0) value = value.slice(1);
+    if (value === '.inf') return sign * Infinity;
+    if (value === '.nan') return NaN;
+    if (value.indexOf(':') >= 0) {
+      value.split(':').forEach(function (v) { digits.unshift(parseFloat(v)); });
+      acc = 0; base = 1;
+      digits.forEach(function (d) { acc += d * base; base *= 60; });
+      return sign * acc;
+    }
+    return sign * parseFloat(value);
+  }
+  function resolveJsYaml3(s) {
+    if (jsyNullTest(s)) return R('null', 'null', 'null');
+    if (JSY_BOOL.test(s)) return R('boolean', 'boolean', (s[0] === 't' || s[0] === 'T') ? 'true' : 'false');
+    if (jsy3IntTest(s)) return R('number', 'number', jsNum(jsy3IntValue(s)));
+    if (JSY3_FLOAT.test(s) && s[s.length - 1] !== '_') return R('number', 'number', jsNum(jsy3FloatValue(s)));
+    var ts = jsyTimestamp(s);
+    if (ts) return ts;
+    if (s === '<<') return R('string', 'merge key', '<<');
+    return R('string', 'string', s);
+  }
+
+  /* ---------- js-yaml 4.3.1 ----------
+     Ported from lib/type/int.js and lib/type/float.js. The leading-zero branch
+     no longer falls through to base 8, and underscores are gone from both the
+     integer scanner and the float pattern. That is the whole 3-to-4 story. */
+
+  function jsy4IntTest(data) {
+    var max = data.length, index = 0, hasDigits = false, ch;
+    if (!max) return false;
+    ch = data[index];
+    if (ch === '-' || ch === '+') ch = data[++index];
+    if (ch === '0') {
+      if (index + 1 === max) return true;
+      ch = data[++index];
+      if (ch === 'b') {
+        index++;
+        for (; index < max; index++) {
+          ch = data[index];
+          if (ch !== '0' && ch !== '1') return false;
+          hasDigits = true;
+        }
+        return hasDigits && isFinite(jsy4IntValue(data));
+      }
+      if (ch === 'x') {
+        index++;
+        for (; index < max; index++) {
+          if (!isHex(data.charCodeAt(index))) return false;
+          hasDigits = true;
+        }
+        return hasDigits && isFinite(jsy4IntValue(data));
+      }
+      if (ch === 'o') {
+        index++;
+        for (; index < max; index++) {
+          if (!isOct(data.charCodeAt(index))) return false;
+          hasDigits = true;
+        }
+        return hasDigits && isFinite(jsy4IntValue(data));
+      }
+    }
+    for (; index < max; index++) {
+      if (!isDec(data.charCodeAt(index))) return false;
+      hasDigits = true;
+    }
+    if (!hasDigits) return false;
+    return isFinite(jsy4IntValue(data));
+  }
+  function jsy4IntValue(data) {
+    var value = data, sign = 1, ch = value[0];
+    if (ch === '-' || ch === '+') { if (ch === '-') sign = -1; value = value.slice(1); ch = value[0]; }
+    if (value === '0') return 0;
+    if (ch === '0') {
+      if (value[1] === 'b') return sign * parseInt(value.slice(2), 2);
+      if (value[1] === 'x') return sign * parseInt(value.slice(2), 16);
+      if (value[1] === 'o') return sign * parseInt(value.slice(2), 8);
+    }
+    return sign * parseInt(value, 10);
+  }
+  var JSY4_FLOAT = /^(?:[-+]?(?:[0-9]+)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?|\.[0-9]+(?:[eE][-+]?[0-9]+)?|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/;
+  var JSY4_FLOAT_SPECIAL = /^(?:[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/;
+  function jsy4FloatTest(data) {
+    if (!JSY4_FLOAT.test(data)) return false;
+    if (isFinite(parseFloat(data))) return true;
+    return JSY4_FLOAT_SPECIAL.test(data);
+  }
+  function jsy4FloatValue(data) {
+    var value = data.toLowerCase(), sign = value[0] === '-' ? -1 : 1;
+    if ('+-'.indexOf(value[0]) >= 0) value = value.slice(1);
+    if (value === '.inf') return sign * Infinity;
+    if (value === '.nan') return NaN;
+    return sign * parseFloat(value);
+  }
+  function resolveJsYaml4(s) {
+    if (jsyNullTest(s)) return R('null', 'null', 'null');
+    if (JSY_BOOL.test(s)) return R('boolean', 'boolean', (s[0] === 't' || s[0] === 'T') ? 'true' : 'false');
+    if (jsy4IntTest(s)) return R('number', 'number', jsNum(jsy4IntValue(s)));
+    if (jsy4FloatTest(s)) return R('number', 'number', jsNum(jsy4FloatValue(s)));
+    var ts = jsyTimestamp(s);
+    if (ts) return ts;
+    if (s === '<<') return R('string', 'merge key', '<<');
+    return R('string', 'string', s);
+  }
+
+  /* ---------- eemeli/yaml 2.9.0, core schema, version 1.2 ----------
+     Tag list and order from dist/schema/core/schema.js. */
+
+  var E_NULL = /^(?:~|[Nn]ull|NULL)?$/;
+  var E_BOOL12 = /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/;
+  var E_INT_OCT12 = /^0o[0-7]+$/;
+  var E_INT12 = /^[-+]?[0-9]+$/;
+  var E_INT_HEX12 = /^0x[0-9a-fA-F]+$/;
+  var E_FLOAT_NAN = /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/;
+  var E_FLOAT_EXP12 = /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/;
+  var E_FLOAT12 = /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/;
+
+  function eNanValue(str) {
+    if (str.slice(-3).toLowerCase() === 'nan') return NaN;
+    return str[0] === '-' ? -Infinity : Infinity;
+  }
+  function eIntResolve(str, offset, radix) {
+    var sign = str[0];
+    if (sign === '-' || sign === '+') offset += 1;
+    var n = parseInt(str.substring(offset).replace(/_/g, ''), radix);
+    return sign === '-' ? -1 * n : n;
+  }
+  function resolveYaml12(s) {
+    if (E_NULL.test(s)) return R('null', 'null', 'null');
+    if (E_BOOL12.test(s)) return R('boolean', 'boolean', (s[0] === 't' || s[0] === 'T') ? 'true' : 'false');
+    if (E_INT_OCT12.test(s)) return R('number', 'number', jsNum(parseInt(s.substring(2), 8)));
+    if (E_INT12.test(s)) return R('number', 'number', jsNum(parseInt(s, 10)));
+    if (E_INT_HEX12.test(s)) return R('number', 'number', jsNum(parseInt(s.substring(2), 16)));
+    if (E_FLOAT_NAN.test(s)) return R('number', 'number', jsNum(eNanValue(s)));
+    if (E_FLOAT_EXP12.test(s)) return R('number', 'number', jsNum(parseFloat(s)));
+    if (E_FLOAT12.test(s)) return R('number', 'number', jsNum(parseFloat(s)));
+    return R('string', 'string', s);
+  }
+
+  /* ---------- eemeli/yaml 2.9.0, yaml-1.1 schema, version 1.1 ----------
+     Tag list and order from dist/schema/yaml-1.1/schema.js. Note that the
+     base-60 tags sit AFTER the plain integer tags, and that the base-60
+     pattern starts [0-9], which is why 00:00 resolves here and nowhere else. */
+
+  var E_TRUE11 = /^(?:Y|y|[Yy]es|YES|[Tt]rue|TRUE|[Oo]n|ON)$/;
+  var E_FALSE11 = /^(?:N|n|[Nn]o|NO|[Ff]alse|FALSE|[Oo]ff|OFF)$/;
+  var E_INT_BIN11 = /^[-+]?0b[0-1_]+$/;
+  var E_INT_OCT11 = /^[-+]?0[0-7_]+$/;
+  var E_INT11 = /^[-+]?[0-9][0-9_]*$/;
+  var E_INT_HEX11 = /^[-+]?0x[0-9a-fA-F_]+$/;
+  var E_FLOAT_EXP11 = /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/;
+  var E_FLOAT11 = /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/;
+  var E_MERGE = /^<<$/;
+  var E_INT_TIME = /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/;
+  var E_FLOAT_TIME = /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/;
+  var E_TS = /^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\.[0-9]+)?)(?:[ \t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$/;
+
+  function eSexa(str) {
+    var sign = str[0];
+    var parts = (sign === '-' || sign === '+') ? str.substring(1) : str;
+    var res = parts.replace(/_/g, '').split(':').reduce(function (a, p) { return a * 60 + Number(p); }, 0);
+    return sign === '-' ? -1 * res : res;
+  }
+  function eTimestamp(s) {
+    var m = E_TS.exec(s);
+    if (!m) return null;
+    var date = Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0),
+      m[7] ? Number((m[7] + '00').substr(1, 3)) : 0);
+    var tz = m[8];
+    if (tz && tz !== 'Z') {
+      var d = eSexa(tz);
+      if (Math.abs(d) < 30) d *= 60;
+      date -= 60000 * d;
+    }
+    return R('date', 'Date', new Date(date).toISOString());
+  }
+  function resolveYaml11(s) {
+    if (E_NULL.test(s)) return R('null', 'null', 'null');
+    if (E_TRUE11.test(s)) return R('boolean', 'boolean', 'true');
+    if (E_FALSE11.test(s)) return R('boolean', 'boolean', 'false');
+    if (E_INT_BIN11.test(s)) return R('number', 'number', jsNum(eIntResolve(s, 2, 2)));
+    if (E_INT_OCT11.test(s)) return R('number', 'number', jsNum(eIntResolve(s, 1, 8)));
+    if (E_INT11.test(s)) return R('number', 'number', jsNum(eIntResolve(s, 0, 10)));
+    if (E_INT_HEX11.test(s)) return R('number', 'number', jsNum(eIntResolve(s, 2, 16)));
+    if (E_FLOAT_NAN.test(s)) return R('number', 'number', jsNum(eNanValue(s)));
+    if (E_FLOAT_EXP11.test(s)) return R('number', 'number', jsNum(parseFloat(s.replace(/_/g, ''))));
+    if (E_FLOAT11.test(s)) return R('number', 'number', jsNum(parseFloat(s.replace(/_/g, ''))));
+    if (E_MERGE.test(s)) return R('string', 'merge key', '<<');
+    if (E_INT_TIME.test(s)) return R('number', 'number', jsNum(eSexa(s)));
+    if (E_FLOAT_TIME.test(s)) return R('number', 'number', jsNum(eSexa(s)));
+    var ts = eTimestamp(s);
+    if (ts) return ts;
+    return R('string', 'string', s);
+  }
+
+  /* ---------- the five columns ---------- */
+
+  var PARSERS = [
+    { id: 'pyyaml', label: 'PyYAML', sub: '6.0.3', fn: resolvePyYAML },
+    { id: 'jsy3', label: 'js-yaml 3', sub: '3.15.1', fn: resolveJsYaml3 },
+    { id: 'jsy4', label: 'js-yaml 4', sub: '4.3.1', fn: resolveJsYaml4 },
+    { id: 'yaml11', label: 'YAML 1.1', sub: 'yaml 2.9.0', fn: resolveYaml11 },
+    { id: 'yaml12', label: 'YAML 1.2', sub: 'yaml 2.9.0', fn: resolveYaml12 }
+  ];
+
+  function resolveAll(s) {
+    var o = {}, i;
+    for (i = 0; i < PARSERS.length; i++) o[PARSERS[i].id] = PARSERS[i].fn(s);
+    return o;
+  }
+
+  /* Canonical value. Two parsers agree only if kind and canonical value match.
+     Pure rendering differences (PyYAML prints 1.0, JS prints 1) do not count. */
+  function canon(r) {
+    if (r.kind === 'null') return 'null';
+    if (r.kind === 'boolean') return r.value.toLowerCase();
+    if (r.kind === 'date') { var t = Date.parse(r.value); return isNaN(t) ? r.value : String(t); }
+    if (r.kind === 'number') {
+      var v = r.value;
+      if (v === 'inf' || v === 'Infinity') return 'Infinity';
+      if (v === '-inf' || v === '-Infinity') return '-Infinity';
+      if (v === 'nan' || v === 'NaN') return 'NaN';
+      return String(Number(v));
+    }
+    return r.value;
+  }
+
+  function severity(res) {
+    var nums = {}, sigs = {}, i, r, c;
+    for (i = 0; i < PARSERS.length; i++) {
+      r = res[PARSERS[i].id];
+      c = canon(r);
+      sigs[r.kind + '|' + c] = 1;
+      if (r.kind === 'number') nums[c] = 1;
+    }
+    if (Object.keys(nums).length > 1) return 'value';
+    if (Object.keys(sigs).length > 1) return 'type';
+    return 'agree';
+  }
+
+  var CLASS_NOTES = {
+    'octal (leading zero)': 'Leading-zero octal. PyYAML, js-yaml 3 and YAML 1.1 read base 8. js-yaml 4 and YAML 1.2 read base 10. Same text, different number, no error either way.',
+    'octal (0o prefix)': 'The inverse direction. Only js-yaml 4 and YAML 1.2 recognise the 0o prefix; the older resolvers hand you the literal string instead of an integer.',
+    'sexagesimal (base 60)': 'Base-60 integer resolution, a separate rule from octal. Anything shaped like a clock time becomes seconds under PyYAML, js-yaml 3 and YAML 1.1.',
+    'single-letter boolean': 'The YAML 1.1 bool type lists y and n. eemeli/yaml at 1.1 honours that; PyYAML does not, and neither js-yaml major does.',
+    'boolean word': 'YAML 1.1 boolean words. Booleans under PyYAML and YAML 1.1, plain strings under both js-yaml majors and YAML 1.2.',
+    'binary literal': 'Binary literals survive in js-yaml 4 even though they are not YAML 1.2 core. Only the strict 1.2 resolver leaves this as a string.',
+    'digit separator (underscore)': 'Underscore digit separators are YAML 1.1. js-yaml 4 removed them from both the integer scanner and the float pattern, so the value degrades to a string.',
+    'timestamp': 'Bare timestamps become Date objects under PyYAML, both js-yaml majors and YAML 1.1. Only strict YAML 1.2 keeps the string. js-yaml 4 keeping this is proof it is not 1.2 core.',
+    'scientific notation': 'PyYAML needs a decimal point and a signed exponent before it will read a float, so bare scientific notation stays a string there and nowhere else.',
+    'hexadecimal': 'Hex literals.',
+    'other': ''
+  };
+
+  function classify(s) {
+    if (/^[-+]?0[0-7_]+$/.test(s)) return 'octal (leading zero)';
+    if (/^[-+]?0o[0-7]+$/.test(s)) return 'octal (0o prefix)';
+    if (/^[-+]?[0-9][0-9_]*(?::[0-9]{1,2})+(?:\.[0-9_]*)?$/.test(s)) return 'sexagesimal (base 60)';
+    if (/^(?:y|Y|n|N)$/.test(s)) return 'single-letter boolean';
+    if (/^(?:yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF)$/.test(s)) return 'boolean word';
+    if (/^[-+]?0b[0-1_]+$/.test(s)) return 'binary literal';
+    if (/_/.test(s) && /^[-+]?[0-9][0-9_]*(?:\.[0-9_]*)?$/.test(s)) return 'digit separator (underscore)';
+    if (/^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}/.test(s)) return 'timestamp';
+    if (/^[-+]?(?:[0-9]*\.)?[0-9]+[eE][-+]?[0-9]+$/.test(s)) return 'scientific notation';
+    if (/^[-+]?0x[0-9a-fA-F_]+$/.test(s)) return 'hexadecimal';
+    return 'other';
+  }
+
+  /* ============================================================
+     Scalar scanner. Block maps, block sequences, flow collections.
+     Skips comments, quoted scalars, block scalar bodies, aliases and
+     explicitly tagged values.
+     ============================================================ */
+
+  var FLOW_STOP = ',[]{}';
+
+  function readQuoted(line, i) {
+    var q = line.charAt(i), j = i + 1, buf = '';
+    while (j < line.length) {
+      var c = line.charAt(j);
+      if (q === '"' && c === '\\') { buf += line.charAt(j + 1); j += 2; continue; }
+      if (c === q) {
+        if (q === "'" && line.charAt(j + 1) === "'") { buf += "'"; j += 2; continue; }
+        return { text: buf, end: j + 1, quoted: true, closed: true };
+      }
+      buf += c; j++;
+    }
+    return { text: buf, end: line.length, quoted: true, closed: false };
+  }
+
+  function readToken(line, i, inFlow) {
+    var c = line.charAt(i);
+    if (c === '"' || c === "'") return readQuoted(line, i);
+    var j = i, buf = '';
+    while (j < line.length) {
+      var ch = line.charAt(j);
+      if (ch === ':' && (j + 1 >= line.length || line.charAt(j + 1) === ' ' ||
+        (inFlow && FLOW_STOP.indexOf(line.charAt(j + 1)) >= 0))) break;
+      if (ch === '#' && (j === i || line.charAt(j - 1) === ' ')) break;
+      if (inFlow && FLOW_STOP.indexOf(ch) >= 0) break;
+      buf += ch; j++;
+    }
+    return { text: buf, end: j, quoted: false, closed: true };
+  }
+
+  function indentOf(line) { var i = 0; while (line.charAt(i) === ' ') i++; return i; }
+
+  /* Anchors are transparent: the scalar after &name is still plain and still
+     resolved. An explicit tag is not: !!str 0644 is unambiguous, so a tagged
+     value is never flagged. */
+  function skipAnchors(line, i) {
+    while (line.charAt(i) === '&') {
+      while (i < line.length && line.charAt(i) !== ' ') i++;
+      while (line.charAt(i) === ' ') i++;
+    }
+    return i;
+  }
+
+  function scan(text) {
+    var out = [], errors = [];
+    var lines = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    var li = 0, blockSkip = -1;
+
+    function emit(txt, lineIdx, col, role) {
+      var t = txt.replace(/\s+$/, '');
+      if (t === '') return;
+      var c0 = t.charAt(0);
+      if (c0 === '*' || c0 === '&' || c0 === '!') return;
+      out.push({ text: t, line: lineIdx + 1, col: col + 1, role: role, raw: lines[lineIdx] });
+    }
+
+    function scanFlow(startLi, startCol) {
+      var depth = 0, cur = startLi, k = startCol, guard = 0;
+      while (cur < lines.length) {
+        var L = lines[cur];
+        while (k < L.length) {
+          if (guard++ > 200000) return cur + 1;
+          var ch = L.charAt(k);
+          if (ch === ' ' || ch === '\t' || ch === ',' || ch === '?') { k++; continue; }
+          if (ch === '#') { k = L.length; break; }
+          if (ch === '[' || ch === '{') { depth++; k++; continue; }
+          if (ch === ']' || ch === '}') { depth--; k++; if (depth <= 0) return cur + 1; continue; }
+          if (ch === ':') { k++; continue; }
+          if (ch === '*' || ch === '&') {
+            while (k < L.length && L.charAt(k) !== ' ' && FLOW_STOP.indexOf(L.charAt(k)) < 0) k++;
+            continue;
+          }
+          if (ch === '!') {
+            while (k < L.length && L.charAt(k) !== ' ' && FLOW_STOP.indexOf(L.charAt(k)) < 0) k++;
+            while (L.charAt(k) === ' ') k++;
+            var skipped = readToken(L, k, true);
+            k = Math.max(skipped.end, k + 1);
+            continue;
+          }
+          var k0 = k;
+          var t = readToken(L, k, true);
+          if (t.quoted && !t.closed) errors.push('Line ' + (cur + 1) + ': unclosed quote.');
+          var m = t.end;
+          while (m < L.length && L.charAt(m) === ' ') m++;
+          var isKey = L.charAt(m) === ':' &&
+            (m + 1 >= L.length || L.charAt(m + 1) === ' ' || FLOW_STOP.indexOf(L.charAt(m + 1)) >= 0);
+          if (!t.quoted) emit(t.text.replace(/^\s+/, ''), cur, k, isKey ? 'flow key' : 'flow item');
+          k = isKey ? m + 1 : t.end;
+          if (k <= k0) k = k0 + 1;
+        }
+        cur++; k = 0;
+      }
+      errors.push('Line ' + (startLi + 1) + ': flow collection is never closed.');
+      return cur;
+    }
+
+    function scanValue(lineIdx, j, nodeIndent) {
+      var line = lines[lineIdx];
+      if (j >= line.length) return lineIdx + 1;
+      if (line.charAt(j) === '!') return lineIdx + 1;
+      j = skipAnchors(line, j);
+      if (j >= line.length || line.charAt(j) === '#') return lineIdx + 1;
+      if (line.charAt(j) === '!') return lineIdx + 1;
+      var c = line.charAt(j);
+      if (c === '|' || c === '>') { blockSkip = nodeIndent; return lineIdx + 1; }
+      if (c === '*') return lineIdx + 1;
+      if (c === '[' || c === '{') return scanFlow(lineIdx, j);
+      var t = readToken(line, j, false);
+      if (t.quoted && !t.closed) errors.push('Line ' + (lineIdx + 1) + ': unclosed quote.');
+      if (!t.quoted) emit(t.text, lineIdx, j, 'value');
+      return lineIdx + 1;
+    }
+
+    function scanLine(lineIdx) {
+      var line = lines[lineIdx];
+      var i = indentOf(line);
+      if (i >= line.length) return lineIdx + 1;
+      if (line.charAt(i) === '#') return lineIdx + 1;
+      if (line.slice(i, i + 3) === '---') {
+        i += 3;
+        while (line.charAt(i) === ' ') i++;
+        if (i >= line.length) return lineIdx + 1;
+      } else if (line.slice(i).replace(/\s+$/, '') === '...') {
+        return lineIdx + 1;
+      }
+      for (;;) {
+        if (line.charAt(i) !== '-') break;
+        if (i + 1 < line.length && line.charAt(i + 1) !== ' ') break;
+        i++;
+        while (line.charAt(i) === ' ') i++;
+        if (i >= line.length) return lineIdx + 1;
+      }
+      var nodeIndent = indentOf(line);
+      if (line.charAt(i) === '?') {
+        i++;
+        while (line.charAt(i) === ' ') i++;
+        if (i >= line.length) return lineIdx + 1;
+      }
+      i = skipAnchors(line, i);
+      if (i >= line.length || line.charAt(i) === '#') return lineIdx + 1;
+      if (line.charAt(i) === '[' || line.charAt(i) === '{') return scanFlow(lineIdx, i);
+      var t = readToken(line, i, false);
+      if (t.quoted && !t.closed) { errors.push('Line ' + (lineIdx + 1) + ': unclosed quote.'); return lineIdx + 1; }
+      var j = t.end;
+      while (line.charAt(j) === ' ') j++;
+      var isKey = line.charAt(j) === ':' && (j + 1 >= line.length || line.charAt(j + 1) === ' ');
+      if (isKey) {
+        if (!t.quoted) emit(t.text, lineIdx, i, 'key');
+        j++;
+        while (line.charAt(j) === ' ') j++;
+        return scanValue(lineIdx, j, nodeIndent);
+      }
+      if (!t.quoted) emit(t.text, lineIdx, i, 'item');
+      return lineIdx + 1;
+    }
+
+    while (li < lines.length) {
+      var line = lines[li];
+      if (blockSkip >= 0) {
+        if (line.replace(/\s+$/, '') === '') { li++; continue; }
+        if (indentOf(line) > blockSkip) { li++; continue; }
+        blockSkip = -1;
+      }
+      if (line.replace(/\s+$/, '') === '') { li++; continue; }
+      if (/^ *\t/.test(line)) {
+        errors.push('Line ' + (li + 1) + ': tab used for indentation. YAML forbids tabs there and most parsers will refuse the file.');
+      }
+      var next = scanLine(li);
+      li = (next > li) ? next : li + 1;
+    }
+
+    return { scalars: out, errors: errors };
+  }
+
+  /* ============================================================
+     Measured reference matrix. Produced on 2026-08-21 by running the
+     real parsers, not by running the code above.
+     ============================================================ */
+
+  var MEASURED = [
+    ["0644","number:420","number:420","number:644","number:420","number:644"],
+    ["012","number:10","number:10","number:12","number:10","number:12"],
+    ["0o644","string:0o644","string:0o644","number:420","string:0o644","number:420"],
+    ["1_000","number:1000","number:1000","string:1_000","number:1000","string:1_000"],
+    ["8:00","number:480","number:480","string:8:00","number:480","string:8:00"],
+    ["22:30","number:1350","number:1350","string:22:30","number:1350","string:22:30"],
+    ["NO","boolean:false","string:NO","string:NO","boolean:false","string:NO"],
+    ["no","boolean:false","string:no","string:no","boolean:false","string:no"],
+    ["off","boolean:false","string:off","string:off","boolean:false","string:off"],
+    ["y","string:y","string:y","string:y","boolean:true","string:y"],
+    ["n","string:n","string:n","string:n","boolean:false","string:n"],
+    ["on","boolean:true","string:on","string:on","boolean:true","string:on"],
+    ["yes","boolean:true","string:yes","string:yes","boolean:true","string:yes"],
+    ["Y","string:Y","string:Y","string:Y","boolean:true","string:Y"],
+    ["true","boolean:true","boolean:true","boolean:true","boolean:true","boolean:true"],
+    ["False","boolean:false","boolean:false","boolean:false","boolean:false","boolean:false"],
+    ["null","null:null","null:null","null:null","null:null","null:null"],
+    ["Null","null:null","null:null","null:null","null:null","null:null"],
+    ["~","null:null","null:null","null:null","null:null","null:null"],
+    ["","null:null","null:null","null:null","null:null","null:null"],
+    ["1.0","number:1.0","number:1","number:1","number:1","number:1"],
+    ["0x1F","number:31","number:31","number:31","number:31","number:31"],
+    ["0b101","number:5","number:5","number:5","number:5","string:0b101"],
+    ["2026-08-20","Date:2026-08-20","Date:2026-08-20T00:00:00.000Z","Date:2026-08-20T00:00:00.000Z","Date:2026-08-20T00:00:00.000Z","string:2026-08-20"],
+    ["2026-08-20T10:00:00Z","Date:2026-08-20T10:00:00+00:00","Date:2026-08-20T10:00:00.000Z","Date:2026-08-20T10:00:00.000Z","Date:2026-08-20T10:00:00.000Z","string:2026-08-20T10:00:00Z"],
+    ["007","number:7","number:7","number:7","number:7","number:7"],
+    ["1:2:3","number:3723","number:3723","string:1:2:3","number:3723","string:1:2:3"],
+    ["0.5","number:0.5","number:0.5","number:0.5","number:0.5","number:0.5"],
+    ["+12","number:12","number:12","number:12","number:12","number:12"],
+    ["-0","number:0","number:0","number:0","number:0","number:0"],
+    ["1e3","string:1e3","number:1000","number:1000","number:1000","number:1000"],
+    [".inf","number:inf","number:Infinity","number:Infinity","number:Infinity","number:Infinity"],
+    [".nan","number:nan","number:NaN","number:NaN","number:NaN","number:NaN"],
+    ["00:00","string:00:00","string:00:00","string:00:00","number:0","string:00:00"],
+    ["60:00","number:3600","number:3600","string:60:00","number:3600","string:60:00"]
+  ];
+
+  /* ============================================================
+     UI
+     ============================================================ */
+
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt !== undefined && txt !== null) n.textContent = txt;
+    return n;
+  }
+
+  var SAMPLES = {
+    compose: [
+      '# service.yml - a config that means two different things',
+      'version: "3.9"',
+      'services:',
+      '  api:',
+      '    image: registry.example.com/api:1.4',
+      '    replicas: 3',
+      '    file_mode: 0644          # base 8 or base 10, pick a parser',
+      '    dir_mode: 0755',
+      '    umask: 012',
+      '    new_mode: 0o644          # the inverse: a string under the old rules',
+      '    max_body: 1_000',
+      '    window_open: 8:00',
+      '    window_close: 22:30',
+      '    grace: 00:00',
+      '    hard_stop: 60:00',
+      '    timeout: 1e3',
+      '    retries: 007',
+      '    mask: 0x1F',
+      '    flags: 0b101',
+      '    expires: 2026-08-20',
+      '    deployed_at: 2026-08-20T10:00:00Z',
+      '    debug: no',
+      '    tls: yes',
+      '    swarm: off',
+      '    audited: Y',
+      '    safe_mode: "0644"        # quoted, unambiguous, never flagged',
+      '    entrypoint: chmod 0644 /etc/app.conf   # one string, not a number',
+      '    banner: |',
+      '      0644 and no and 8:00 all live inside this block scalar',
+      '      <span>none of them are flagged<\/span>',
+      '    ports: [8080, 0644, "0644"]',
+      '    labels: {mode: 0644, tier: no, region: us-east-1}',
+      '    tagged: !!str 0644       # explicit tag, never flagged'
+    ].join('\n'),
+    actions: [
+      '# A CI workflow. The first key is the interesting one.',
+      'name: ci',
+      'on:',
+      '  push:',
+      '    branches: [main]',
+      '  schedule:',
+      '    - cron: "0 0 * * *"',
+      'env:',
+      '  VERBOSE: no',
+      '  RETRIES: 007',
+      '  MAX_UPLOAD: 1_000',
+      '  NIGHTLY_AT: 22:30',
+      '  BUILD_ID: 0644',
+      'jobs:',
+      '  build:',
+      '    runs-on: ubuntu-latest',
+      '    timeout-minutes: 30',
+      '    continue-on-error: off',
+      '    steps:',
+      '      - uses: actions/checkout@v4',
+      '      - name: permissions',
+      '        run: chmod 0644 dist/index.html',
+      '      - name: release',
+      '        with:',
+      '          tag: 2026-08-20',
+      '          draft: n'
+    ].join('\n'),
+    edges: [
+      '# Every class this tool knows about, one line each.',
+      'octal_leading_zero: 0644',
+      'octal_prefixed: 0o644',
+      'octal_short: 012',
+      'binary: 0b101',
+      'hex: 0x1F',
+      'underscored: 1_000',
+      'sexagesimal_clock: 8:00',
+      'sexagesimal_zero: 00:00',
+      'sexagesimal_invalid: 60:00',
+      'sexagesimal_triple: 1:2:3',
+      'scientific: 1e3',
+      'scientific_signed: 1.0e+3',
+      'float_identity: 1.0',
+      'date_bare: 2026-08-20',
+      'datetime_utc: 2026-08-20T10:00:00Z',
+      'bool_word_upper: NO',
+      'bool_word_lower: yes',
+      'bool_switch: off',
+      'bool_letter_y: y',
+      'bool_letter_n: n',
+      'bool_letter_upper: Y',
+      'agreed_true: true',
+      'agreed_null: ~',
+      'agreed_infinity: .inf',
+      'agreed_padded_int: 007',
+      'always_a_string: "0644"'
+    ].join('\n')
+  };
+
+  /* ---- reference table + self check ---- */
+
+  function buildRefTable() {
+    var thead = document.querySelector('#reftable thead');
+    var tbody = document.querySelector('#reftable tbody');
+    var tr = el('tr'), i, j;
+    tr.appendChild(el('th', null, 'scalar'));
+    for (i = 0; i < PARSERS.length; i++) tr.appendChild(el('th', null, PARSERS[i].label));
+    thead.appendChild(tr);
+
+    var disagree = 0, reproduced = 0, cells = 0;
+    for (i = 0; i < MEASURED.length; i++) {
+      var row = MEASURED[i];
+      var scalar = row[0];
+      var live = resolveAll(scalar);
+      var sev = severity(live);
+      var mode = modalCanon(live);
+      var trr = el('tr', sev === 'agree' ? 'agree' : null);
+      trr.appendChild(el('td', 'sc mono', scalar === '' ? '(empty)' : scalar));
+      for (j = 0; j < PARSERS.length; j++) {
+        var measured = row[j + 1];
+        var r = live[PARSERS[j].id];
+        var mine = (r.kind === 'date' ? 'Date' : r.kind) + ':' +
+          (r.kind === 'boolean' ? r.value.toLowerCase() : (r.kind === 'null' ? 'null' : r.value));
+        cells++;
+        if (mine === measured) reproduced++;
+        var odd = sev !== 'agree' && (r.kind + '|' + canon(r)) !== mode;
+        trr.appendChild(el('td', 'mono ' + (odd ? 'diff' : 'same'), measured));
+      }
+      if (sev !== 'agree') disagree++;
+      tbody.appendChild(trr);
+    }
+    $('refcount').textContent = disagree + ' of the ' + MEASURED.length +
+      ' resolve to a different type or value depending on the parser.';
+
+    var sc = $('selfcheck');
+    sc.textContent = '';
+    var okAll = (reproduced === cells);
+    sc.className = 'selfcheck' + (okAll ? '' : ' bad');
+    sc.appendChild(document.createTextNode('Self-check: the resolvers on this page reproduce '));
+    sc.appendChild(el('b', null, reproduced + ' of ' + cells));
+    sc.appendChild(document.createTextNode(' measured cells (' + MEASURED.length + ' scalars across ' +
+      PARSERS.length + ' parsers). The table shows the measured values; the score is computed live by re-running this page against them.'));
+  }
+
+  /* ---- audit ---- */
+
+  function renderMessages(errors, note) {
+    var box = $('messages');
+    box.textContent = '';
+    if (note) {
+      var b = el('div', 'banner err');
+      b.appendChild(el('div', null, note));
+      box.appendChild(b);
+    }
+    if (errors && errors.length) {
+      var w = el('div', 'banner warn');
+      w.appendChild(el('div', null, 'Problems found while reading the document. Results below may be incomplete.'));
+      var ul = el('ul');
+      for (var i = 0; i < errors.length && i < 12; i++) ul.appendChild(el('li', null, errors[i]));
+      if (errors.length > 12) ul.appendChild(el('li', null, (errors.length - 12) + ' more.'));
+      w.appendChild(ul);
+      box.appendChild(w);
+    }
+  }
+
+  function statBlock(n, label, cls) {
+    var d = el('div', 'stat ' + cls);
+    d.appendChild(el('div', 'n', String(n)));
+    d.appendChild(el('div', 'l', label));
+    return d;
+  }
+
+  function modalCanon(res) {
+    var counts = {}, best = null, bestN = 0, i, c;
+    for (i = 0; i < PARSERS.length; i++) {
+      c = res[PARSERS[i].id].kind + '|' + canon(res[PARSERS[i].id]);
+      counts[c] = (counts[c] || 0) + 1;
+      if (counts[c] > bestN) { bestN = counts[c]; best = c; }
+    }
+    return best;
+  }
+
+  function renderFinding(item, seenClasses) {
+    var res = item.res, sev = item.sev, cls = item.cls;
+    var card = el('div', 'finding');
+    var head = el('div', 'head');
+    head.appendChild(el('span', 'loc', 'line ' + item.line + ', col ' + item.col + ' (' + item.role + ')'));
+    head.appendChild(el('span', 'lit mono', item.text));
+    head.appendChild(el('span', 'badge ' + (sev === 'value' ? 'v' : 't'), sev === 'value' ? 'value drift' : 'type drift'));
+    head.appendChild(el('span', 'badge c', cls));
+    card.appendChild(head);
+
+    var mode = modalCanon(res);
+    var cols = el('div', 'cols');
+    for (var i = 0; i < PARSERS.length; i++) {
+      var p = PARSERS[i], r = res[p.id];
+      var odd = (r.kind + '|' + canon(r)) !== mode;
+      var c = el('div', 'col' + (odd ? ' odd' : ''));
+      var pl = el('div', 'p', p.label);
+      c.appendChild(pl);
+      c.appendChild(el('div', 'va mono', r.kind === 'string' ? '"' + r.value + '"' : r.value));
+      c.appendChild(el('div', 'ty', r.type));
+      cols.appendChild(c);
+    }
+    card.appendChild(cols);
+
+    if (CLASS_NOTES[cls] && !seenClasses[cls]) {
+      seenClasses[cls] = 1;
+      card.appendChild(el('div', 'note', CLASS_NOTES[cls]));
+    }
+    var raw = (item.raw || '').replace(/\s+$/, '');
+    if (raw.length > 160) raw = raw.slice(0, 157) + '...';
+    card.appendChild(el('div', 'srcline mono', String(item.line) + ' | ' + raw));
+    return card;
+  }
+
+  function audit() {
+    var text = $('input').value;
+    var sumBox = $('summary'), findBox = $('findings');
+    sumBox.textContent = '';
+    findBox.textContent = '';
+
+    if (!text || text.replace(/\s+/g, '') === '') {
+      renderMessages(null, 'Nothing to audit. Paste a YAML document, or load one of the samples.');
+      return;
+    }
+
+    var scanned = scan(text);
+    var scalars = scanned.scalars;
+
+    if (!scalars.length) {
+      renderMessages(scanned.errors, 'No plain scalars found. Every value in this document is quoted, tagged, aliased or inside a block scalar, which means nothing here is ambiguous. That is a good result.');
+      return;
+    }
+    renderMessages(scanned.errors, null);
+
+    var findings = [], vCount = 0, tCount = 0, byClass = {}, i, item, res, sev;
+    for (i = 0; i < scalars.length; i++) {
+      res = resolveAll(scalars[i].text);
+      sev = severity(res);
+      if (sev === 'agree') continue;
+      var cls = classify(scalars[i].text);
+      item = {
+        text: scalars[i].text, line: scalars[i].line, col: scalars[i].col,
+        role: scalars[i].role, raw: scalars[i].raw, res: res, sev: sev, cls: cls
+      };
+      findings.push(item);
+      if (sev === 'value') vCount++; else tCount++;
+      byClass[cls] = (byClass[cls] || 0) + 1;
+    }
+
+    var stats = el('div', 'stats');
+    stats.appendChild(statBlock(findings.length + ' of ' + scalars.length, 'scalars parser-dependent', findings.length ? 'v' : 'a'));
+    stats.appendChild(statBlock(vCount, 'value drift', 'v'));
+    stats.appendChild(statBlock(tCount, 'type drift', 't'));
+    stats.appendChild(statBlock(scalars.length - findings.length, 'identical everywhere', 'a'));
+    sumBox.appendChild(stats);
+
+    if (!findings.length) {
+      var okBox = el('div', 'headline');
+      okBox.appendChild(el('span', 'k', 'Result'));
+      okBox.appendChild(el('div', null, 'All ' + scalars.length + ' plain scalars in this document resolve to the same type and the same value under all five resolvers. Nothing here changes when the parser changes.'));
+      sumBox.appendChild(okBox);
+      return;
+    }
+
+    findings.sort(function (a, b) {
+      if (a.sev !== b.sev) return a.sev === 'value' ? -1 : 1;
+      return a.line - b.line;
+    });
+
+    var top = findings[0];
+    var groups = {};
+    for (i = 0; i < PARSERS.length; i++) {
+      var key = top.res[PARSERS[i].id].kind === 'string'
+        ? '"' + top.res[PARSERS[i].id].value + '"'
+        : top.res[PARSERS[i].id].value;
+      (groups[key] = groups[key] || []).push(PARSERS[i].label);
+    }
+    var phrases = [];
+    for (var k in groups) {
+      if (Object.prototype.hasOwnProperty.call(groups, k)) {
+        phrases.push(k + ' under ' + groups[k].join(', '));
+      }
+    }
+    var hl = el('div', 'headline');
+    hl.appendChild(el('span', 'k', 'Headline'));
+    hl.appendChild(el('div', null,
+      'Line ' + top.line + ', ' + top.text + ' resolves to ' + phrases.join('; and to ') +
+      '. ' + findings.length + ' of your ' + scalars.length + ' scalars are parser-dependent, ' +
+      vCount + ' of them by value.'));
+    sumBox.appendChild(hl);
+
+    var classList = [];
+    for (var cn in byClass) {
+      if (Object.prototype.hasOwnProperty.call(byClass, cn)) classList.push(byClass[cn] + ' ' + cn);
+    }
+    classList.sort();
+    var kv = el('p', 'kv', 'By class: ' + classList.join(' | '));
+    kv.style.marginTop = '12px';
+    sumBox.appendChild(kv);
+
+    var h = el('h2', null, 'Findings');
+    findBox.appendChild(h);
+    var seenClasses = {};
+    for (i = 0; i < findings.length; i++) findBox.appendChild(renderFinding(findings[i], seenClasses));
+  }
+
+  /* ---- wiring ---- */
+
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    try { localStorage.setItem('ytca-theme', t); } catch (e) { /* storage blocked */ }
+  }
+
+  function init() {
+    buildRefTable();
+
+    $('run').addEventListener('click', audit);
+    $('clear').addEventListener('click', function () {
+      $('input').value = '';
+      $('messages').textContent = '';
+      $('summary').textContent = '';
+      $('findings').textContent = '';
+      $('input').focus();
+    });
+    $('themebtn').addEventListener('click', function () {
+      var cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      setTheme(cur === 'light' ? 'dark' : 'light');
+    });
+    var btns = document.querySelectorAll('[data-sample]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function (ev) {
+        var key = ev.currentTarget.getAttribute('data-sample');
+        $('input').value = SAMPLES[key] || '';
+        audit();
+        $('summary').scrollIntoView({ block: 'start' });
+      });
+    }
+    $('input').addEventListener('keydown', function (ev) {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); audit(); }
+    });
+    $('hint').textContent = 'Nothing is uploaded. All five resolvers run in this tab. Ctrl+Enter audits.';
+
+    window.YTCA = { resolveAll: resolveAll, severity: severity, scan: scan, audit: audit, samples: SAMPLES };
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
