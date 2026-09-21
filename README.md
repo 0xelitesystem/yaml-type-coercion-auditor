@@ -136,6 +136,7 @@ There is no build. It is a single self-contained `index.html` with inline CSS an
 - [json-precision-auditor](https://github.com/0xelitesystem/json-precision-auditor) is the declared sibling. That one shows IEEE 754 silently changing your **numbers**. This one shows the resolver silently changing your **types and values**, a class the JSON tool cannot reach because it starts from already-parsed JSON.
 - [yaml-to-json](https://github.com/0xelitesystem/yaml-to-json) converts YAML to JSON with a sixth set of scalar rules of its own. This tool is the warning label for it.
 - [jwt-inspector](https://github.com/0xelitesystem/jwt-inspector) decodes and checks a JWT locally.
+- [github-actions-expression-evaluator](https://github.com/0xelitesystem/github-actions-expression-evaluator) picks up where this tool stops inside a workflow file. This tool decides what the YAML parser turned your token into, that one decides what the expression evaluator does with the value the parser produced.
 
 ## Third-party notices
 
