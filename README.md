@@ -155,4 +155,4 @@ third-party code is bundled and no network request is made.
 
 ## License
 
-MIT. Copyright (c) 2026 0xelitesystem.
+MIT. Copyright (c) 2026 RBL Industries LLC.
