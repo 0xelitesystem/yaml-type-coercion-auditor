@@ -97,7 +97,7 @@ Type coercion bugs in YAML do not throw. They hand you a valid value of the wron
 
 It is one HTML file with no dependencies, no build step, no telemetry, and no network access of any kind. MIT licensed. Fork it, vendor it, put it behind your firewall.
 
-**In the interest of not overselling this, and starting with my own work:** [yaml-to-json](https://0xelitesystem.github.io/yaml-to-json/) is mine, it is live, and it is a sixth set of scalar rules that agrees with none of the five columns above on the headline case. Its resolver deliberately keeps leading-zero values as strings:
+**In the interest of not overselling this, and starting with my own work:** [yaml-json-two-way](https://0xelitesystem.github.io/yaml-json-two-way/) is mine, it is live, and it is a sixth set of scalar rules that agrees with none of the five columns above on the headline case. Its resolver deliberately keeps leading-zero values as strings:
 
 ```js
 if (/^[-+]?\d+$/.test(s)){
@@ -134,7 +134,7 @@ There is no build. It is a single self-contained `index.html` with inline CSS an
 ## Related
 
 - [json-precision-auditor](https://github.com/0xelitesystem/json-precision-auditor) is the declared sibling. That one shows IEEE 754 silently changing your **numbers**. This one shows the resolver silently changing your **types and values**, a class the JSON tool cannot reach because it starts from already-parsed JSON.
-- [yaml-to-json](https://github.com/0xelitesystem/yaml-to-json) converts YAML to JSON with a sixth set of scalar rules of its own. This tool is the warning label for it.
+- [yaml-json-two-way](https://github.com/0xelitesystem/yaml-json-two-way) converts YAML to JSON with a sixth set of scalar rules of its own. This tool is the warning label for it.
 - [jwt-verify-in-browser](https://github.com/0xelitesystem/jwt-verify-in-browser) decodes and checks a JWT locally.
 - [github-actions-expression-evaluator](https://github.com/0xelitesystem/github-actions-expression-evaluator) picks up where this tool stops inside a workflow file. This tool decides what the YAML parser turned your token into, that one decides what the expression evaluator does with the value the parser produced.
 
